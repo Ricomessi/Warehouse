@@ -1,6 +1,11 @@
 <?php
+
+include 'koneksi.php';
 session_start();
-$username = $_SESSION['username'];
+if (!isset($_SESSION['username'])) {
+    header("Location: login.php");
+    exit();
+}
 include 'koneksi.php';
 
 if (isset($_GET['id'])) {

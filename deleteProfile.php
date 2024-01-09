@@ -1,4 +1,11 @@
+
 <?php
+include 'koneksi.php';
+session_start();
+if (!isset($_SESSION['username'])) {
+    header("Location: login.php");
+    exit();
+}
 include 'koneksi.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['id'])) {

@@ -1,4 +1,11 @@
 <?php
+
+include 'koneksi.php';
+session_start();
+if (!isset($_SESSION['username'])) {
+    header("Location: login.php");
+    exit();
+}
 include("koneksi.php");
 $query = "SELECT * FROM transaksi";
 $result = mysqli_query($koneksi, $query);

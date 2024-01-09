@@ -65,9 +65,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             $updateQuery = "UPDATE barang SET stock = '$newStock' WHERE nama_barang = '$nama_barang'";
             if ($koneksi->query($updateQuery) === TRUE) {
-                $success = "Stok barang berhasil diperbarui!!";
-                $_SESSION['success'] = $success;
-                header("Location: menuStaff.php");
+                // Ambil ID barang yang sudah ada
+                $barang_id = $row['id_barang'];
+
+                // Ambil ID staff dari session username
+                $username = $_SESSION['username'];
+                $staffQuery = "SELECT id_user FROM pengguna WHERE username = '$username'";
+                $staffResult = $koneksi->query($staffQuery);
+                $staffData = $staffResult->fetch_assoc();
+                $staff_id = $staffData['id_user'];
+                $tanggal_transaksi = date("Y-m-d");
+
+                // Simpan informasi transaksi ke dalam tabel transaksi
+                $historiQuery = "INSERT INTO transaksi (id_user, id_barang, jumlah, jenis_transaksi, tanggal_transaksi) VALUES ('$staff_id', '$barang_id', '$stock', 'Menambah Stok Barang $nama_barang',  '$tanggal_transaksi')";
+                if ($koneksi->query($historiQuery) === TRUE) {
+                    // Set session success
+                    $success = "Data Barang Berhasil Diperbarui!!";
+                    $_SESSION['success'] = $success;
+                    header("Location: menuStaff.php");
+                } else {
+                    echo "Error: " . $historiQuery . "<br>" . $koneksi->error;
+                }
             } else {
                 echo "Error: " . $updateQuery . "<br>" . $koneksi->error;
             }
@@ -76,11 +94,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if (move_uploaded_file($gambar_barang['tmp_name'], $uploadPath)) {
                 $sql = "INSERT INTO barang (nama_barang, jenis_barang, stock, gambar_barang) VALUES ('$nama_barang', '$jenis_barang', '$stock', '$uploadPath')";
 
+                // Setelah proses insert atau update selesai
                 if ($koneksi->query($sql) === TRUE) {
-                    $success = "Data Barang Baru Berhasil Ditambahkan!!";
-                    $_SESSION['success'] = $success;
-                    header("Location: menuStaff.php");
+                    // Jika proses insert berhasil, simpan histori transaksi
+                    $barang_id = $koneksi->insert_id; // Ambil ID barang yang baru saja di-insert
+
+                    // Ambil ID staff dari session username
+                    $username = $_SESSION['username'];
+                    $staffQuery = "SELECT id_user FROM pengguna WHERE username = '$username'";
+                    $staffResult = $koneksi->query($staffQuery);
+                    $staffData = $staffResult->fetch_assoc();
+                    $staff_id = $staffData['id_user'];
+                    $tanggal_transaksi = date("Y-m-d");
+
+                    // Simpan informasi transaksi ke dalam tabel histori_staff
+                    $historiQuery = "INSERT INTO transaksi (id_user, id_barang, jumlah, jenis_transaksi, tanggal_transaksi) VALUES ('$staff_id', '$barang_id', '$stock', 'Menambah Barang $nama_barang',  '$tanggal_transaksi')";
+                    if ($koneksi->query($historiQuery) === TRUE) {
+                        // Set session success
+                        $success = "Data Barang Baru Berhasil Ditambahkan!!";
+                        $_SESSION['success'] = $success;
+                        header("Location: menuStaff.php");
+                    } else {
+                        echo "Error: " . $historiQuery . "<br>" . $koneksi->error;
+                    }
                 } else {
+                    // Jika proses insert/update gagal, tampilkan pesan error
                     echo "Error: " . $sql . "<br>" . $koneksi->error;
                 }
             } else {

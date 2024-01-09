@@ -1,6 +1,11 @@
 <?php
-include 'koneksi.php';
 
+include 'koneksi.php';
+session_start();
+if (!isset($_SESSION['username'])) {
+    header("Location: login.php");
+    exit();
+}
 if (isset($_POST['id'])) {
     $id = $_POST['id'];
     $nama_barang = $_POST['nama_barang'];
@@ -58,13 +63,26 @@ if (isset($_POST['id'])) {
 
         // Tambahkan kondisi update gambar jika ada gambar baru yang diunggah
         if (isset($_FILES['gambar_barang']) && $_FILES['gambar_barang']['size'] > 0) {
-            $sql_update .= ", gambar_barang = '$gambar_barang'";
+            $sql_update .= ", gambar_barang = 'upload/$gambar_barang'";
         }
 
         $sql_update .= " WHERE id_barang = $id";
 
         if ($koneksi->query($sql_update) === TRUE) {
-            // Redirect ke menuBarang
+            $username = $_SESSION['username'];
+            $staffQuery = "SELECT id_user FROM pengguna WHERE username = '$username'";
+            $staffResult = $koneksi->query($staffQuery);
+            $staffData = $staffResult->fetch_assoc();
+            $staff_id = $staffData['id_user'];
+            $tanggal_transaksi = date("Y-m-d");
+
+            // Simpan informasi transaksi ke dalam tabel transaksi
+            $historiQuery = "INSERT INTO transaksi (id_user, id_barang, jumlah, jenis_transaksi, tanggal_transaksi) VALUES ('$staff_id', '$id', '$stock', 'Mengupdate Barang $nama_barang ',  '$tanggal_transaksi')";
+            if ($koneksi->query($historiQuery) === TRUE) {
+                $response = "Anda telah mengupdate $nama_barang. Barang berhasil diubah.";
+            } else {
+                $response = "Error: " . $historiQuery . "<br>" . $koneksi->error;
+            }
             header("Location: menuStaff.php");
             exit();
         } else {
@@ -74,4 +92,3 @@ if (isset($_POST['id'])) {
 }
 
 $koneksi->close();
-?>
